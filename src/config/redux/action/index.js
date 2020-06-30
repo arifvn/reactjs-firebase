@@ -84,6 +84,13 @@ export const updateDataToAPI = (data) => (dispatch) => {
   });
 };
 
+export const deleteDataFromAPI = (uid, noteid) => (dispatch) => {
+  let apiEndPoint = database.ref(`notes/${uid}/${noteid}`);
+  return new Promise((resolve, reject) => {
+    apiEndPoint.remove();
+  });
+};
+
 export const getDataFromAPI = (uid) => (dispatch) => {
   let apiEndPoint = database.ref("notes/" + uid);
 

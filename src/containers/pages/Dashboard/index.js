@@ -5,6 +5,7 @@ import {
   addDataToAPI,
   getDataFromAPI,
   updateDataToAPI,
+  deleteDataFromAPI,
 } from "../../../config/redux/action";
 import "./dashboard.scss";
 
@@ -26,24 +27,28 @@ class Dasboard extends Component {
 
   handleFormSubmit = () => {
     const { title, content, isUpdate, nodeId } = this.state;
-    const { saveDataAPI, updateDataAPI } = this.props;
+    const { saveDataAPI, updateDataAPI, history } = this.props;
     let date = new Date().getTime();
     const userDataLocal = JSON.parse(localStorage.getItem("userData"));
 
-    const data = {
-      title: title,
-      content: content,
-      date: date,
-      uid: userDataLocal.uid,
-    };
-
-    if (isUpdate) {
-      data.noteId = nodeId;
-      updateDataAPI(data);
-      this.resetState();
+    if (userDataLocal === null) {
+      history.push("/login");
     } else {
-      saveDataAPI(data);
-      this.resetState();
+      const data = {
+        title: title,
+        content: content,
+        date: date,
+        uid: userDataLocal.uid,
+      };
+
+      if (isUpdate) {
+        data.noteId = nodeId;
+        updateDataAPI(data);
+        this.resetState();
+      } else {
+        saveDataAPI(data);
+        this.resetState();
+      }
     }
   };
 
@@ -56,6 +61,19 @@ class Dasboard extends Component {
     });
   };
 
+  handleNoteDelete = (e, noteid) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const { deleteDataAPI, history } = this.props;
+
+    const userDataLocal = JSON.parse(localStorage.getItem("userData"));
+    if (userDataLocal !== null) {
+      deleteDataAPI(userDataLocal.uid, noteid);
+    } else {
+      history.push("/login");
+    }
+  };
+
   resetState = () => {
     this.setState({
       title: "",
@@ -66,9 +84,16 @@ class Dasboard extends Component {
   };
 
   componentDidMount() {
-    const { getDataAPI } = this.props;
-    const userDataLocal = JSON.parse(localStorage.getItem("userData"));
-    getDataAPI(userDataLocal.uid);
+    const { getDataAPI, history } = this.props;
+
+    let userDataLocal = null;
+    userDataLocal = JSON.parse(localStorage.getItem("userData"));
+
+    if (userDataLocal === null) {
+      history.push("/login");
+    } else {
+      getDataAPI(userDataLocal.uid);
+    }
   }
 
   render() {
@@ -111,6 +136,12 @@ class Dasboard extends Component {
                 key={note.key}
                 onClick={() => this.handleNoteUpdate(note.data, note.key)}
               >
+                <span
+                  className="close"
+                  onClick={(e) => this.handleNoteDelete(e, note.key)}
+                >
+                  &times;
+                </span>
                 <p className="title">{note.data.title}</p>
                 <p className="date">{note.data.date}</p>
                 <p className="content">{note.data.content}</p>
@@ -131,6 +162,7 @@ const mapDispatchToProps = (dispatch) => ({
   saveDataAPI: (data) => dispatch(addDataToAPI(data)),
   getDataAPI: (uid) => dispatch(getDataFromAPI(uid)),
   updateDataAPI: (data) => dispatch(updateDataToAPI(data)),
+  deleteDataAPI: (uid, noteid) => dispatch(deleteDataFromAPI(uid, noteid)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Dasboard);
